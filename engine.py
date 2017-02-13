@@ -16,6 +16,7 @@ class Grid:
         self.X = x
         self.Y = y
         
+        # tiles in the grid creation
         tilex = self.X
         tiley = self.Y
         self.Tiles = []
@@ -27,8 +28,9 @@ class Grid:
             tilex += tilewidth + 12
             tiley = self.Y
 
-        self.Tiles[0][7].Set_tile("akkers", 0, "any")
-        self.Tiles[7][0].Set_tile("beurs", 0, "any")
+        self.Tiles[0][7].Set_tile("akkers", 0, "any") # creating start-tile
+        self.Tiles[7][0].Set_tile("beurs", 0, "any") # creating end-tile
+
         ### TEMP
         self.Tiles[0][6].Set_tile("straight", 0, "red")
         self.Tiles[1][7].Set_tile("tcross", 1, "blue")
@@ -39,14 +41,22 @@ class Grid:
         self.Tiles[x][y].Set_tile(tile, rotation, player)
     
     def Check_connected(self):
+        # change all connected vars to False
         for a in self.Tiles:
             for b in a:
                 b.Connected = False
         
+        # start pathfinding (starting from akkers)
         self.Tiles[0][7].Connected = True
         self.Tiles[0][7].Tell_tiles()
 
+        # checking if beurs is connected
+        if self.Tiles[7][0].Connected:
+            # the player that connected to beurs wins
+            Win(self.Tiles[7][0].Player)
+
     def Draw(self):
+        # draw all tiles of the grid
         for a in self.Tiles:
             for b in a:
                 b.Draw()
@@ -66,6 +76,7 @@ class Tile:
 
     def Set_tile(self, tile, rotation, player):
         if   tile == "akkers":  self.Rail = [True, True, False, False]
+        
         elif tile ==  "beurs":  self.Rail = [False, False, True, True]
 
         elif tile ==  "cross":  self.Rail =   [True, True, True, True]
@@ -99,15 +110,16 @@ class Tile:
     def Listen(self, telling_tile, angle):
         access = False
         if (self.Player == telling_tile.Player or telling_tile.Player == "any") and not self.Connected: # Checks if the tile's not yet connected to the start and if he's from the same team
+            # checks if this tile is connected to the one that is telling
             if   angle == "under" and self.Rail[0]: access = True
             elif angle == "left"  and self.Rail[1]: access = True
             elif angle == "above" and self.Rail[2]: access = True
             elif angle == "right" and self.Rail[3]: access = True
         
-        if access:
+        if access: # if not connected, of the same team and has a rail going to the telling tile
             print("[" + str(telling_tile.Pos[0]) + "][" + str(telling_tile.Pos[1]) + "] tells the tile " + angle + " that he is connected. The tile (" + str(self.Player) + ") listened and tells the others.")
-            self.Connected = True
-            self.Tell_tiles()
+            self.Connected = True # sets itself as connected to akkers
+            self.Tell_tiles() # tells the tiles around him he's connected (RECURSION EFFECT)
         else:
             print("[" + str(telling_tile.Pos[0]) + "][" + str(telling_tile.Pos[1]) + "] tells the tile " + angle + " that he is connected. The tile did not listen.")
     
@@ -160,6 +172,8 @@ class Game:
             else: self.Exit = True # if self.Level is not a valid level, it will terminate the while-loop
 
 ### FUNCTION DEFINITIONS ###
+def win(player):
+    game.Level = "exit"
 def text(text, size, x, y, fontname=None, textcolor=(255,255,255)):
     # blits text on the screen
     font = pygame.font.SysFont(fontname, size)
