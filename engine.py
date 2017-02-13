@@ -1,3 +1,6 @@
+import os
+os.environ['SDL_VIDEO_CENTERED'] = "1"
+
 import pygame
 pygame.init()
 
@@ -8,6 +11,115 @@ green = (0,255,0)
 blue = (0,0,255)
 
 ### CLASS DEFINITIONS ###
+class Grid:
+    def __init__(self, x, y, tilewidth):
+        self.X = x
+        self.Y = y
+        
+        tilex = self.X
+        tiley = self.Y
+        self.Tiles = []
+        for x in range(0,8):
+            self.Tiles.append([])
+            for y in range(0,8):
+                self.Tiles[x].append(Tile(tilex, tiley, [x, y], tilewidth))
+                tiley += tilewidth + 12
+            tilex += tilewidth + 12
+            tiley = self.Y
+
+        self.Tiles[0][7].Set_tile("akkers", 0, "any")
+        self.Tiles[7][0].Set_tile("beurs", 0, "any")
+        ### TEMP
+        self.Tiles[0][6].Set_tile("straight", 0, "red")
+        self.Tiles[1][7].Set_tile("tcross", 1, "blue")
+        self.Tiles[1][6].Set_tile("straight", 0, "blue")
+        ### TEMP
+
+    def Change_tile(self, x, y, tile, rotation, player):
+        self.Tiles[x][y].Set_tile(tile, rotation, player)
+    
+    def Check_connected(self):
+        for a in self.Tiles:
+            for b in a:
+                b.Connected = False
+        
+        self.Tiles[0][7].Connected = True
+        self.Tiles[0][7].Tell_tiles()
+
+    def Draw(self):
+        for a in self.Tiles:
+            for b in a:
+                b.Draw()
+
+class Tile:
+    def __init__(self,x,y,pos, width):
+        self.X = x
+        self.Y =  y
+        self.Width = width
+        self.Pos = pos
+        
+        self.Tile = None
+        self.Rotation = None
+        self.Rail = [False, False, False, False]
+        self.Player = None
+        self.Connected = False
+
+    def Set_tile(self, tile, rotation, player):
+        if   tile == "akkers":  self.Rail = [True, True, False, False]
+        elif tile ==  "beurs":  self.Rail = [False, False, True, True]
+
+        elif tile ==  "cross":  self.Rail =   [True, True, True, True]
+
+        elif tile == "straight":
+            if   rotation == 0: self.Rail = [True, False, True, False]
+            elif rotation == 1: self.Rail = [False, True, False, True]
+
+        elif tile == "turn":
+            if   rotation == 0: self.Rail = [True, False, False, True]
+            elif rotation == 1: self.Rail = [True, True, False, False]
+            elif rotation == 2: self.Rail = [False, True, True, False]
+            elif rotation == 3: self.Rail = [False, False, True, True]
+        
+        elif tile == "tcross":
+            if   rotation == 0: self.Rail =  [False, True, True, True]
+            elif rotation == 1: self.Rail =  [True, False, True, True]
+            elif rotation == 2: self.Rail =  [True, True, False, True]
+            elif rotation == 3: self.Rail =  [True, True, True, False]
+        
+        self.Player   = player
+        self.Tile     = tile
+        self.Rotation = rotation
+    
+    def Tell_tiles(self):
+        if self.Rail[0] and self.Pos[1]-1 >= 0: grid.Tiles[self.Pos[0]][self.Pos[1]-1].Listen(self, "above") # Tells the tile above to listen
+        if self.Rail[1] and self.Pos[0]+1 < 8 : grid.Tiles[self.Pos[0]+1][self.Pos[1]].Listen(self, "right") # Tells the tile on the right to listen
+        if self.Rail[2] and self.Pos[1]+1 < 8 : grid.Tiles[self.Pos[0]][self.Pos[1]+1].Listen(self, "under") # Tells the tile under to listen
+        if self.Rail[3] and self.Pos[0]-1 >= 0: grid.Tiles[self.Pos[0]-1][self.Pos[1]].Listen(self, "left")  # Tells the tile on the left to listen
+    
+    def Listen(self, telling_tile, angle):
+        access = False
+        if (self.Player == telling_tile.Player or telling_tile.Player == "any") and not self.Connected: # Checks if the tile's not yet connected to the start and if he's from the same team
+            if   angle == "under" and self.Rail[0]: access = True
+            elif angle == "left"  and self.Rail[1]: access = True
+            elif angle == "above" and self.Rail[2]: access = True
+            elif angle == "right" and self.Rail[3]: access = True
+        
+        if access:
+            print("[" + str(telling_tile.Pos[0]) + "][" + str(telling_tile.Pos[1]) + "] tells the tile " + angle + " that he is connected. The tile (" + str(self.Player) + ") listened and tells the others.")
+            self.Connected = True
+            self.Tell_tiles()
+        else:
+            print("[" + str(telling_tile.Pos[0]) + "][" + str(telling_tile.Pos[1]) + "] tells the tile " + angle + " that he is connected. The tile did not listen.")
+    
+    def Draw(self):
+        # TEMP: drawing squares instead of actual tile images
+        if   self.Tile == None:
+            pygame.draw.rect(game.Display, red, (self.X, self.Y, self.Width, self.Width))
+        elif self.Tile == "akkers" or self.Tile == "beurs":
+            pygame.draw.rect(game.Display, green, (self.X, self.Y, self.Width, self.Width))
+        elif self.Connected:
+            pygame.draw.rect(game.Display, blue, (self.X, self.Y, self.Width, self.Width))
+
 class Game:
     def __init__(self):
         # FPS setup
@@ -39,7 +151,7 @@ class Game:
 
                 self.Draw() # black screen. draw all your things after this line
 
-                text("This is a test.", 60, 10, 10)
+                grid.Draw()
 
                 self.Tick() # refreshes the window. this is the end of the loop
             
@@ -57,7 +169,10 @@ def text(text, size, x, y, fontname=None, textcolor=(255,255,255)):
 
 ### INITIALISTATIONS OF CLASSES ###
 game = Game()
-
+grid = Grid(20, 20, 80)
+### TEMP
+grid.Check_connected()
+### TEMP
 
 ### STARTS THE GAME ###
 game.Loop()
