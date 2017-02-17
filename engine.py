@@ -1,6 +1,7 @@
 import os
 os.environ['SDL_VIDEO_CENTERED'] = "1"
 
+import random
 import pygame
 pygame.init()
 
@@ -9,8 +10,49 @@ pygame.init()
 red = (255,0,0)
 green = (0,255,0)
 blue = (0,0,255)
+white = (255,255,255)
+black = (0,0,0)
 
 ### CLASS DEFINITIONS ###
+class Dice:
+    def __init__(self, x, y, width):
+        self.X = x
+        self.Y = y
+        self.Width = width
+
+        self.Code = None
+        self.Number = random.randint(1,6)
+        self.Eyes = []
+
+        # all coords of possible eyes on a dice
+        x = x + width // 9 * 2
+        y = y + width // 9 * 2
+        for i in range(1,10):
+            self.Eyes.append([x,y])
+            x = x + self.Width // 9 * 2
+            if i % 3 == 0:
+                x = self.X + self.Width // 9 * 2
+                y = y + self.Width // 9 * 2
+    
+    def Roll(self):
+        self.Number = random.randint(1,6)
+    
+    def Draw(self):
+        # getting the 'code' for the eyes that have to be drawn
+        if   self.Number == 1: self.Code = [4]
+        elif self.Number == 2: self.Code = [0, 8]
+        elif self.Number == 3: self.Code = [0, 4, 8]
+        elif self.Number == 4: self.Code = [0, 2, 6, 8]
+        elif self.Number == 5: self.Code = [0, 2, 4, 6, 8]
+        elif self.Number == 6: self.Code = [0, 2, 3, 5, 6, 8]
+
+        # drawing the dice
+        pygame.draw.rect(game.Display, white, (self.X, self.Y, self.Width, self.Width))
+        pygame.draw.rect(game.Display, black, (self.X + self.Width / 9, self.Y + self.Width / 9, self.Width / 9 * 7, self.Width / 9 * 7))
+        # drawing the eyes
+        for i in self.Code: pygame.draw.rect(game.Display, white, (self.Eyes[i][0], self.Eyes[i][1], self.Width/9, self.Width/9))
+
+
 class Grid:
     def __init__(self, x, y, tilewidth):
         self.X = x
@@ -30,12 +72,6 @@ class Grid:
 
         self.Tiles[0][7].Set_tile("akkers", 0, "any") # creating start-tile
         self.Tiles[7][0].Set_tile("beurs", 0, "any") # creating end-tile
-
-        ### TEMP
-        self.Tiles[0][6].Set_tile("straight", 0, "red")
-        self.Tiles[1][7].Set_tile("tcross", 1, "blue")
-        self.Tiles[1][6].Set_tile("straight", 0, "blue")
-        ### TEMP
 
     def Change_tile(self, x, y, tile, rotation, player):
         self.Tiles[x][y].Set_tile(tile, rotation, player)
@@ -160,6 +196,9 @@ class Game:
 
                     if event.type == pygame.QUIT: # checks if someone tries to close the window
                         self.Exit = True # stops the while-loop
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            self.Exit = True
 
                 self.Draw() # black screen. draw all your things after this line
 
@@ -183,10 +222,7 @@ def text(text, size, x, y, fontname=None, textcolor=(255,255,255)):
 
 ### INITIALISTATIONS OF CLASSES ###
 game = Game()
-grid = Grid(20, 20, 80)
-### TEMP
-grid.Check_connected()
-### TEMP
+grid = Grid(10, 10, 80)
 
 ### STARTS THE GAME ###
 game.Loop()
