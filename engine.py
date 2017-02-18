@@ -12,6 +12,8 @@ green = (0,255,0)
 blue = (0,0,255)
 white = (255,255,255)
 black = (0,0,0)
+grey = (200,200,200)
+darkgrey = (50,50,50)
 
 ### CLASS DEFINITIONS ###
 class Button:
@@ -62,12 +64,12 @@ class Button:
                 else:
                     if self.Pressed == True:
                         self.Function()
-                        PlaySound(Mouseclick)
+                        #PlaySound(Mouseclick)
                         self.Pressed = False
 
         else:
             pygame.draw.rect(game.Display, self.Color, (self.X, self.Y, self.Width, self.Height))
-        Text_draw(self.Text, int(self.Text_size), self.X + 5, self.Y + self.Height / 5, self.Color_text)
+        text(self.Text, int(self.Text_size), self.X + 5, self.Y + self.Height / 5, self.Color_text)
 
         if self.Constant == True:
             if self.Pressed:
@@ -110,7 +112,6 @@ class Dice:
         pygame.draw.rect(game.Display, black, (self.X + self.Width / 9, self.Y + self.Width / 9, self.Width / 9 * 7, self.Width / 9 * 7))
         # drawing the eyes
         for i in self.Code: pygame.draw.rect(game.Display, white, (self.Eyes[i][0], self.Eyes[i][1], self.Width/9, self.Width/9))
-
 
 class Grid:
     def __init__(self, x, y, tilewidth):
@@ -227,6 +228,57 @@ class Tile:
         elif self.Connected:
             pygame.draw.rect(game.Display, blue, (self.X, self.Y, self.Width, self.Width))
 
+class Menu:
+    def __init__(self):
+        #buttons
+        self.StartGame = Button(50, 60, 190, 50, toStartGame, grey, darkgrey, "Start game")
+        self.Options = Button(50, 120, 190, 50, toOptions, grey, darkgrey, "Options")
+        self.Rules = Button(50, 180, 190, 50, toRules, grey, darkgrey, "Rules")
+        self.Highscore = Button(50, 240, 190, 50, toHighscore, grey, darkgrey, "Highscores")
+        self.LoadGame = Button(50, 300, 190, 50, toLoadGame, grey, darkgrey, "Load game")
+        self.Exit = Button(50, 360, 190, 50, exit, grey, darkgrey, "Exit")
+    def Draw(self):
+        self.StartGame.Draw()
+        self.Options.Draw()
+        self.Rules.Draw()
+        self.Highscore.Draw()
+        self.LoadGame.Draw()
+        self.Exit.Draw()
+
+class StartGame:
+    def __init__(self):
+        self.Return = Button(50, game.Height - 50, 200, 50, toMenu, darkgrey, grey, "Main Menu")
+
+    def Draw(self):
+        self.Return.Draw()
+
+class LoadGame:
+    def __init__(self):
+        self.Return = Button(50, game.Height - 50, 200, 50, toMenu, darkgrey, grey, "Main Menu")
+    
+    def Draw(self):
+        self.Return.Draw()
+
+class Highscore:
+    def __init__(self):
+        self.Return = Button(50, game.Height - 50, 200, 50, toMenu, darkgrey, grey, "Main Menu")
+
+    def Draw(self):
+        self.Return.Draw()
+
+class Rules:
+    def __init__(self):
+        self.Return = Button(50, game.Height - 50, 200, 50, toMenu, darkgrey, grey, "Main Menu",)
+    
+    def Draw(self):
+        self.Return.Draw()
+
+class Options:
+    def __init__(self):
+        self.Return = Button(50, game.Height - 50, 200, 50, toMenu, darkgrey, grey, "Main Menu")
+
+    def Draw(self):
+        self.Return.Draw()
 class Game:
     def __init__(self):
         # FPS setup
@@ -241,7 +293,11 @@ class Game:
         # gameloop and first level setup
         self.Exit = False
         self.Level = "menu"
-            
+
+        # achtergronden
+        self.backgrounds = [\
+            pygame.transform.scale(pygame.image.load('images\\menubackground.png'),(self.Width, self.Height))]
+        
     def Draw(self): # create a black screen
         self.Display.fill((0,0,0))
     def Tick(self): # refresh the window and wait 1/FPS seconds
@@ -251,37 +307,103 @@ class Game:
         while not self.Exit:
 
             if self.Level == "menu": # loop only goes here if the level is 'menu'
-                for event in pygame.event.get(): # checking for any events
-
-                    if event.type == pygame.QUIT: # checks if someone tries to close the window
-                        self.Exit = True # stops the while-loop
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE:
-                            self.Exit = True
-
+                checkExit() # checks if the game is quit
+                
                 self.Draw() # black screen. draw all your things after this line
 
-                grid.Draw()
+                self.Display.fill(white)
+                self.Display.blit(self.backgrounds[0], (0,0))
+                menu.Draw()
 
                 self.Tick() # refreshes the window. this is the end of the loop
             
             # you can use elifs here to make new levels
+            elif self.Level == "options":
+                checkExit()
+
+                self.Draw()
+                options.Draw()
+
+                self.Tick()
+
+            elif self.Level == "rules":
+                for event in pygame.event.get():
+                    checkExit()
+
+                self.Draw()
+                rules.Draw()
+
+                self.Tick()
+
+            elif self.Level == "highscore":
+                checkExit()
+
+                self.Draw()
+                highscore.Draw()
+
+                self.Tick()
+
+            elif self.Level == "load game":
+                checkExit()
+
+                self.Draw()
+                loadGame.Draw()
+
+                self.Tick()
+
+            elif self.Level == "start game":
+                checkExit()
+
+                self.Draw()
+                startGame.Draw()
+
+                self.Tick()
 
             else: self.Exit = True # if self.Level is not a valid level, it will terminate the while-loop
 
 ### FUNCTION DEFINITIONS ###
 def win(player):
     game.Level = "exit"
-def text(text, size, x, y, fontname=None, textcolor=(255,255,255)):
+def text(text, size, x, y, textcolor=(255,255,255), fontname=None):
     # blits text on the screen
     font = pygame.font.SysFont(fontname, size)
     screen_text = font.render(text, True, textcolor)
     game.Display.blit(screen_text, [x,y])
+def exit():
+    game.Level = "exit"
+# functions to change screen
+def toMenu():
+    game.Level = "menu"
+def toOptions():
+    game.Level = "options"
+def toRules():
+    game.Level = "rules"
+def toHighscore():
+    game.Level = "highscore"
+def toLoadGame():
+    game.Level = "load game"
+def toStartGame():
+    game.Level = "start game"
+# function to check if the game is quit
+def checkExit():
+    for event in pygame.event.get(): # checking for any events
+
+        if event.type == pygame.QUIT: # checks if someone tries to close the window
+            self.Exit = True # stops the while-loop
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.Exit = True
 
 
 ### INITIALISTATIONS OF CLASSES ###
 game = Game()
 grid = Grid(10, 10, 80)
+menu = Menu()
+options = Options()
+rules = Rules()
+highscore = Highscore()
+loadGame = LoadGame()
+startGame = StartGame()
 
 ### STARTS THE GAME ###
 game.Loop()
